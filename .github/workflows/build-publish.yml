@@ -1,0 +1,78 @@
+name: Publish Build
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      PAT:
+        required: true
+      DOCKERUSER:
+        required: true
+      DOCKERPASS:
+        required: true
+    outputs:
+      image_tag:
+        description: "The docker image tag to be deployed"
+        value: "${{ jobs.publishbuild.outputs.version }}-build${{ jobs.publishbuild.outputs.build }}"
+
+jobs:
+  publishbuild:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.generate_output.outputs.version }}
+      build: ${{ steps.generate_output.outputs.build }}
+    env:
+      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ inputs.branch }}
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 5.0.x
+        source-url: https://nuget.pkg.github.com/Namachain/index.json
+      env:
+        NUGET_AUTH_TOKEN: ${{ secrets.PAT }}
+
+    - run: cp ../nuget.config .
+    - run: dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org --configfile ./nuget.config
+
+    - id: versionstep
+      name: Extract version
+      run: echo "version=$(grep '<Version>' < Server/*.csproj | sed 's/.*<Version>\(.*\)<\/Version>/\1/' | cut -d '$' -f 1)" >> $GITHUB_ENV
+
+    - run: echo "build=$(date +%s%N)" >> $GITHUB_ENV
+
+    - name: Login to docker
+      run: echo ${{ secrets.DOCKERPASS }} | docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} --password-stdin 
+
+    - name: Build
+      run: docker build . --file Server/GithubDockerfile --tag registry.namachain.com/namachain/${{ inputs.app_name }}:${{ env.version }}-build${{ env.build }} --tag registry.namachain.com/namachain/${{ inputs.app_name }}:latest-build
+
+    - name: Publish
+      run: docker push registry.namachain.com/namachain/${{ inputs.app_name }} --all-tags
+
+    - name: Tag with build version
+      run: git tag ${{ env.version }}-build${{ env.build }}
+
+    - run: git push origin --tags
+
+    - name: Generate-Output
+      id: generate_output
+      run: |
+        echo "::set-output name=version::${{ env.version }}"
+        echo "::set-output name=build::${{ env.build }}"
+
+    - name: Logout docker
+      if: always()
+      run: docker logout registry.namachain.com

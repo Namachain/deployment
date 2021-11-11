@@ -1,0 +1,308 @@
+services:
+  namakey:
+    hostname: namakey
+    container_name: namakey
+    image: registry.namachain.com/namachain/namakey:${namakey_IMAGE_TAG}
+    ports:
+      - "5005:80"
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 5s
+      timeout: 10s
+      retries: 0
+      start_period: 5s
+    networks:
+      localnet:
+        aliases:
+          - namakey
+  producer:
+    image: registry.namachain.com/namachain/chain:${producer_IMAGE_TAG}
+    healthcheck:
+      test: ["CMD", "curl", "-X", "POST", "http://localhost:8888/v1/chain/get_info"]
+      interval: 10s
+      timeout: 10s
+      retries: 2
+      start_period: 20s
+  producerconfig:
+    image: registry.namachain.com/namachain/producer:${producerconfig_IMAGE_TAG}
+  producer2:
+    extends:
+      service: producer
+    hostname: chain
+    container_name: chain
+    ports:
+      - "8888:8888"
+      - "9875:9876"
+    networks:
+      localnet:
+        aliases:
+          - producer2
+    volumes:
+      - producer2volume:/config
+  producer2config:
+    extends:
+      service: producerconfig
+    hostname: producer2config
+    container_name: producer2config
+    networks:
+      - localnet
+    volumes:
+      - userchainconfig:/genesis
+      - producer2volume:/namachain
+    secrets:
+      - source: prod2
+        target: /config/producer.json
+    depends_on:
+      namakey:
+        condition: service_healthy
+  vault:
+    hostname: vault
+    container_name: vault
+    image: registry.namachain.com/namachain/vault:${vault_IMAGE_TAG}
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+    depends_on:
+      producer2:
+        condition: service_healthy
+    networks:
+      localnet:
+        aliases:
+          - vault
+    ports:
+      - "2000:80"
+    healthcheck:
+      test: [ "CMD", "true" ]
+      interval: 5s
+      timeout: 10s
+      retries: 0
+      start_period: 5s
+  credsdeploy:
+    image: registry.namachain.com/namachain/webcaller:${credsdeploy_IMAGE_TAG}
+    entrypoint: [ "curl", "--location", "--request", "POST", "http://vault:80/api/service/deploy", "--header", "Content-Type: application/json", "--data-raw" ]
+    networks:
+      - localnet
+  authenticator:
+    hostname: auth
+    container_name: auth
+    image: registry.namachain.com/namachain/authenticator:${authenticator_IMAGE_TAG}
+    ports: 
+      - "5000:80"
+    depends_on:
+      producer2:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    networks:
+      localnet:
+        aliases:
+          - auth
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+    healthcheck:
+      test: ["CMD", "true"]
+      interval: 5s
+      timeout: 10s
+      retries: 0
+      start_period: 10s
+  authcredentials:
+    extends:
+      service: credsdeploy
+    container_name: authcreds
+    depends_on:
+      authenticator:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://auth:80\",\"account\": \"nama.auth\"}" ]
+  app:
+    hostname: app
+    container_name: app
+    image: registry.namachain.com/namachain/app:${app_IMAGE_TAG}
+    ports: 
+      - "81:80"
+    depends_on:
+      producer2:
+        condition: service_healthy
+      authenticator:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "true" ]
+      interval: 5s
+      timeout: 10s
+      retries: 0
+      start_period: 8s
+    networks:
+      localnet:
+        aliases:
+          - app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+  appcredentials:
+    extends:
+      service: credsdeploy
+    container_name: appcreds
+    depends_on:
+      app:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://app:80\",\"account\": \"nama.dev\"}" ]
+  business:
+    hostname: business
+    container_name: business
+    image: registry.namachain.com/namachain/business:${business_IMAGE_TAG}
+    ports:
+      - "83:80"
+    depends_on:
+      producer2:
+        condition: service_healthy
+      authenticator:
+        condition: service_healthy
+    healthcheck:
+      test: [ "CMD", "true" ]
+      interval: 5s
+      timeout: 10s
+      retries: 0
+      start_period: 8s
+    networks:
+      localnet:
+        aliases:
+          - app
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+  businesscredentials:
+    extends:
+      service: credsdeploy
+    container_name: businesscreds
+    depends_on:
+      business:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://business:80\",\"account\": \"nama.dev\"}" ]
+  portal:
+    hostname: portal
+    container_name: portal
+    image: registry.namachain.com/namachain/portal:${portal_IMAGE_TAG}
+    ports: 
+      - "82:80"
+    depends_on:
+      producer2:
+        condition: service_healthy
+      authenticator:
+        condition: service_healthy
+      app:
+        condition: service_healthy
+    networks:
+      localnet:
+        aliases:
+          - portal
+    healthcheck:
+      test: [ "CMD", "true" ]
+      interval: 5s
+      timeout: 10s
+      retries: 0
+      start_period: 8s
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+  portalcredentials:
+    extends:
+      service: credsdeploy
+    container_name: portalcreds
+    depends_on:
+      portal:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://portal:80\",\"account\": \"nama.portal\"}" ]
+  mailserver:
+    hostname: mail
+    container_name: mail
+    image: namshi/smtp
+    restart: unless-stopped
+    environment: 
+      - GMAIL_USER=${EMAIL_USER}
+      - GMAIL_PASSWORD=${EMAIL_PASS}
+      - KEY_PATH=/sslv/namachain.com.key
+      - CERTIFICATE_PATH=/sslv/namachain.com.crt
+    networks:
+      mailnet:
+        aliases:
+          - mail
+    volumes:
+      - sslv:/sslv
+  kycapp:
+    hostname: kycapp
+    container_name: kycapp
+    image: registry.namachain.com/namachain/kycapp:${kycapp_IMAGE_TAG}
+    ports: 
+      - "5004:80"
+    depends_on:
+      producer2:
+        condition: service_healthy
+      authenticator:
+        condition: service_healthy
+    networks:
+      localnet:
+        aliases:
+          - kycapp
+      mailnet:
+        aliases:
+          - kycapp
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+      - APP_ShuftiPro__Secret=${APP_ShuftiPro__Secret}
+  kyccredentials:
+    extends:
+      service: credsdeploy
+    container_name: kyccreds
+    depends_on:
+      portal:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://kycapp:80\",\"account\":\"nama.kyc\"}" ]
+  aml:
+    hostname: aml
+    container_name: aml
+    image: registry.namachain.com/namachain/aml:${aml_IMAGE_TAG}
+    ports:
+      - "5010:80"
+    depends_on:
+      producer2:
+        condition: service_healthy
+      authenticator:
+        condition: service_healthy
+    networks:
+      localnet:
+        aliases:
+          - aml
+      mailnet:
+        aliases:
+          - aml
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+      - APP_ShuftiPro__Secret=${APP_ShuftiPro__Secret}
+  amlcredentials:
+    extends:
+      service: credsdeploy
+    container_name: amlcreds
+    depends_on:
+      portal:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://aml:80\",\"account\":\"nama.aml\"}" ]
+networks:
+  localnet: {}
+  mailnet: {}
+volumes:
+  sslv:
+    external: true
+  userchainconfig:
+    external: true
+  producer2volume:
+    external: false
+secrets:
+  prod2:
+    file: ~/producer2/producer.json

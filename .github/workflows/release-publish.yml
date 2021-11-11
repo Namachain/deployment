@@ -1,0 +1,71 @@
+name: Publish Build
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+    secrets:
+      GITHUB_TOKEN:
+        required: true
+      PAT:
+        required: true
+      DOCKERUSER:
+        required: true
+      DOCKERPASS:
+        required: true
+    outputs:
+      image_tag:
+        description: "The docker image tag to be deployed"
+        value: "${{ jobs.publishbuild.outputs.version }}"
+
+jobs:
+  publishbuild:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.generate_output.outputs.version }}
+      build: ${{ steps.generate_output.outputs.build }}
+    env:
+      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - run: echo "version=$(echo ${{ inputs.branch }} | rev | cut -d '/' -f 1 | rev)" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.version }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+          source-url: https://nuget.pkg.github.com/Namachain/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.PAT }}
+
+      - run: cp ../nuget.config .
+
+      - run: dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org --configfile ./nuget.config
+
+      - name: Login to docker
+        run: echo ${{ secrets.DOCKERPASS }} | docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} --password-stdin
+
+      - name: Build
+        run: docker build . --file Server/GithubDockerfile --tag registry.namachain.com/namachain/${{ inputs.app_name }}:${{ env.version }} --tag registry.namachain.com/namachain/${{ inputs.app_name }}:latest
+
+      - name: Add latest stable tag
+        if: ${{ !contains(env.version, '-') }}
+        run: docker tag registry.namachain.com/namachain/${{ inputs.app_name }}:latest registry.namachain.com/namachain/${{ inputs.app_name }}:latest-stable
+
+      - name: Publish
+        run: docker push registry.namachain.com/namachain/${{ inputs.app_name }} --all-tags
+
+      - name: Generate-Output
+        id: generate_output
+        run: |
+          echo "::set-output name=version::${{ env.version }}"
+
+      - name: Logout docker
+        if: always()
+        run: docker logout registry.namachain.com
