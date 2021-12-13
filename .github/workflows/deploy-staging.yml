@@ -33,6 +33,8 @@ on:
         required: true
       DOCKER_PRIVATE_KEY:
         required: true
+      APP_VAULT__KEY:
+        required: false
 
 jobs:
   generate-deployment-strategy:
@@ -99,6 +101,7 @@ jobs:
 
     - name: deploy app container
       run: |
+        export APP_VAULT__KEY=${{ secrets.APP_VAULT__KEY }}
         export namakey_IMAGE_TAG=latest
         export vault_IMAGE_TAG=latest
         export credsdeploy_IMAGE_TAG=latest

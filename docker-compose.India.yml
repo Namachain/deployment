@@ -61,6 +61,7 @@ services:
     image: registry.namachain.com/namachain/vault:${vault_IMAGE_TAG}
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
+      - APP_VAULT__KEY=${APP_VAULT__KEY}
     depends_on:
       producer2:
         condition: service_healthy
