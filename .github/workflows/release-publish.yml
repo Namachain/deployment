@@ -9,6 +9,10 @@ on:
       branch:
         required: true
         type: string
+      csproj_dir:
+        required: false
+        type: string
+        default: '.'
     secrets:
       GH_TOKEN:
         required: true
@@ -52,7 +56,7 @@ jobs:
         run: echo ${{ secrets.DOCKERPASS }} | docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} --password-stdin
 
       - name: Build
-        run: docker build . --file Server/GithubDockerfile --tag registry.namachain.com/namachain/${{ inputs.app_name }}:${{ env.version }} --tag registry.namachain.com/namachain/${{ inputs.app_name }}:latest
+        run: docker build . --file ${{ inputs.csproj_dir }}/GithubDockerfile --tag registry.namachain.com/namachain/${{ inputs.app_name }}:${{ env.version }} --tag registry.namachain.com/namachain/${{ inputs.app_name }}:latest
 
       - name: Add latest stable tag
         if: ${{ !contains(env.version, '-') }}
