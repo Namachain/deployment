@@ -10,7 +10,7 @@ on:
         required: true
         type: string
     secrets:
-      GITHUB_TOKEN:
+      GH_TOKEN:
         required: true
       PAT:
         required: true
@@ -30,7 +30,7 @@ jobs:
       version: ${{ steps.generate_output.outputs.version }}
       build: ${{ steps.generate_output.outputs.build }}
     env:
-      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NUGET_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
       - run: echo "version=$(echo ${{ inputs.branch }} | rev | cut -d '/' -f 1 | rev)" >> $GITHUB_ENV
       - uses: actions/checkout@v2

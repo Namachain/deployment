@@ -7,14 +7,14 @@ on:
         required: true
         type: string
     secrets:
-      GITHUB_TOKEN:
+      GH_TOKEN:
         required: true
 
 jobs:
   preparerelease:
     runs-on: ubuntu-latest
     env:
-      NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      NUGET_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
       - name: Parse version
         run: echo "version=$(echo ${{ inputs.branch }} | rev | cut -d '/' -f 1 | rev)" >> $GITHUB_ENV
