@@ -1,0 +1,53 @@
+name: Publish Build
+
+on:
+  workflow_call:
+    inputs:
+      app_name:
+        required: true
+        type: string
+      branch:
+        required: true
+        type: string
+      csproj_dir:
+        required: false
+        type: string
+        default: '.'
+    secrets:
+      GH_TOKEN:
+        required: true
+      PAT:
+        required: true
+
+jobs:
+  publishbuild:
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.generate_output.outputs.version }}
+      build: ${{ steps.generate_output.outputs.build }}
+    env:
+      NUGET_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
+    steps:
+      - run: echo "version=$(echo ${{ inputs.branch }} | rev | cut -d '/' -f 1 | rev)" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.version }}
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.x
+          source-url: https://nuget.pkg.github.com/Namachain/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.PAT }}
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore
+
+      - name: Package
+        run: dotnet pack --configuration Release --no-build --force
+
+      - name: Publish
+        run: dotnet nuget push -k $NUGET_AUTH_TOKEN -s https://nuget.pkg.github.com/Namachain/index.json bin/Release/*.nupkg
