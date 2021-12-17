@@ -115,6 +115,7 @@ jobs:
         export demoservice_IMAGE_TAG=latest
         export producer_IMAGE_TAG=latest
         export producerconfig_IMAGE_TAG=latest
+        export aml_IMAGE_TAG=latest
         export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}
 
         ./deploy.sh -n -p staging -c namachain-context \
@@ -142,6 +143,7 @@ jobs:
         export demoservice_IMAGE_TAG=latest
         export producer_IMAGE_TAG=latest
         export producerconfig_IMAGE_TAG=latest
+        export aml_IMAGE_TAG=latest
         export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}
 
         ./deploy.sh -n -p staging -c namachain-context \
