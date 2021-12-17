@@ -115,7 +115,7 @@ jobs:
         export demoservice_IMAGE_TAG=latest
         export producer_IMAGE_TAG=latest
         export producerconfig_IMAGE_TAG=latest
-        export ${{ matrix.app_name }}IMAGE_TAG=${{ matrix.image_tag }}
+        export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}
 
         ./deploy.sh -n -p staging -c namachain-context \
         -f docker-compose.${{ matrix.staging_env }}.yml \
@@ -142,7 +142,7 @@ jobs:
         export demoservice_IMAGE_TAG=latest
         export producer_IMAGE_TAG=latest
         export producerconfig_IMAGE_TAG=latest
-        export ${{ matrix.app_name }}IMAGE_TAG=${{ matrix.image_tag }}
+        export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}
 
         ./deploy.sh -n -p staging -c namachain-context \
         -f docker-compose.${{ matrix.staging_env }}.yml \
