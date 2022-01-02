@@ -1,20 +1,4 @@
 services:
-  namakey:
-    hostname: namakey
-    container_name: namakey
-    image: registry.namachain.com/namachain/namakey:${namakey_IMAGE_TAG}
-    ports:
-      - "5005:80"
-    healthcheck:
-      test: ["CMD", "true"]
-      interval: 5s
-      timeout: 10s
-      retries: 0
-      start_period: 5s
-    networks:
-      localnet:
-        aliases:
-          - namakey
   producer:
     image: registry.namachain.com/namachain/chain:${producer_IMAGE_TAG}
     healthcheck:
@@ -52,9 +36,6 @@ services:
     secrets:
       - source: prod2
         target: /config/producer.json
-    depends_on:
-      namakey:
-        condition: service_healthy
   vault:
     hostname: vault
     container_name: vault
