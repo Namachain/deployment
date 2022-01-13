@@ -13,10 +13,16 @@ on:
         required: false
         type: string
         default: '.'
+      charts_dir:
+        required: false
+        type: string
+        default: ''
     secrets:
       GH_TOKEN:
         required: true
       PAT:
+        required: true
+      CI_PAT:
         required: true
       DOCKERUSER:
         required: true
@@ -43,7 +49,9 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v1
         with:
-          dotnet-version: 5.0.x
+          dotnet-version: |
+            5.0.x
+            6.0.x
           source-url: https://nuget.pkg.github.com/Namachain/index.json
         env:
           NUGET_AUTH_TOKEN: ${{ secrets.PAT }}
@@ -73,3 +81,48 @@ jobs:
       - name: Logout docker
         if: always()
         run: docker logout registry.namachain.com
+
+  publishchart:
+    runs-on: ubuntu-latest
+    needs: publishbuild
+    if: ${{ inputs.charts_dir != '' }}
+    outputs:
+      version: ${{ steps.generate_output.outputs.version }}
+      build: ${{ steps.generate_output.outputs.build }}
+    steps:
+      - run: echo "version=$(echo ${{ inputs.branch }} | rev | cut -d '/' -f 1 | rev)" >> $GITHUB_ENV
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ env.version }}
+          fetch-depth: 0
+          
+      - name: Configure Git and temporarily remove version tag
+        run: |
+          set -x
+          #temporarily remove tag to work around change-detection issue with chart-release plugin
+          git tag -d ${{ env.version }}
+          git push --delete origin ${{ env.version }}
+
+          
+      - name: Install Helm
+        uses: azure/setup-helm@v1
+        with:
+          version: v3.4.0
+
+      - name: clone the helm registry
+        uses: actions/checkout@v2
+        with:
+          repository: Namachain/helm-charts
+          path: './helm-charts'
+          token: "${{ secrets.CI_PAT }}"
+         
+      - name: Run chart-releaser
+        uses: Namachain/deployment/.github/actions/chart-releaser@feature/charts
+        with:
+          charts_dir: ${{ inputs.charts_dir }}
+        env:
+          CR_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+        
+      - name: restore git tag
+        if: always()
+        run: git tag ${{ env.version }} && git push --tags

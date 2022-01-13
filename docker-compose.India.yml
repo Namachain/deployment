@@ -213,37 +213,43 @@ services:
           - mail
     volumes:
       - sslv:/sslv
-  kycapp:
-    hostname: kycapp
-    container_name: kycapp
-    image: registry.namachain.com/namachain/kycapp:${kycapp_IMAGE_TAG}
+  kyc:
+    hostname: kyc
+    container_name: kyc
+    image: registry.namachain.com/namachain/kyc:${kycapp_IMAGE_TAG}
     ports: 
       - "5004:80"
     depends_on:
-      producer2:
+      userchain:
         condition: service_healthy
       authenticator:
         condition: service_healthy
     networks:
       localnet:
         aliases:
-          - kycapp
+          - kyc
       mailnet:
         aliases:
-          - kycapp
+          - kyc
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
       - APP_ShuftiPro__Secret=${APP_ShuftiPro__Secret}
+    healthcheck:
+      test: [ "CMD", "curl", "-X", "GET", "http://localhost:80/api/v1/publickey" ]
+      interval: 10s
+      timeout: 10s
+      retries: 2
+      start_period: 15s
   kyccredentials:
     extends:
       service: credsdeploy
     container_name: kyccreds
     depends_on:
-      portal:
+      kyc:
         condition: service_healthy
-      vault:
-        condition: service_started
-    command: [ "{\"baseUrl\":\"http://kycapp:80\",\"account\":\"nama.kyc\"}" ]
+      authcredentials:
+        condition: service_completed_successfully
+    command: [ "{\"baseUrl\":\"http://kyc:80\",\"account\":\"nama.kyc\"}" ]
   aml:
     hostname: aml
     container_name: aml
