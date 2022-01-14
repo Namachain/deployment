@@ -1,0 +1,24 @@
+apiVersion: v1
+entries:
+  auth:
+    - apiVersion: v2
+      appVersion: 0.19.0-build1641878086885186522
+      created: "2022-01-11T05:16:02.611058869Z"
+      description: A Helm chart for Kubernetes
+      digest: 9d27cf1fa66d82003eac79b0529e589eb3887ac8a4df56a8876e083787475747
+      name: auth
+      type: application
+      urls:
+        - https://github.com/Namachain/namachain.authenticator/releases/download/auth-0.19.0-build1641878086885186522/auth-0.19.0-build1641878086885186522.tgz
+      version: 0.19.0-build1641878086885186522
+    - apiVersion: v2
+      appVersion: 0.18.0-build1641802711682156898
+      created: "2022-01-10T08:19:47.502880162Z"
+      description: A Helm chart for Kubernetes
+      digest: ff75f7d80f08fcfb3a7ac3edffd1fd67dbe197b9edfd2e3646b0a5e039e2bd79
+      name: auth
+      type: application
+      urls:
+        - https://github.com/Namachain/namachain.authenticator/releases/download/auth-0.18.0-build1641802711682156898/auth-0.18.0-build1641802711682156898.tgz
+      version: 0.18.0-build1641802711682156898
+generated: "2022-01-11T05:16:02.611626374Z"

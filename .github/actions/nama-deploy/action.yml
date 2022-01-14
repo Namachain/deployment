@@ -1,0 +1,61 @@
+﻿name: "Helm Chart Releaser"
+description: "Host a Helm charts repo on GitHub Pages"
+author: "The Helm authors"
+branding:
+  color: blue
+  icon: anchor
+inputs:
+  chart-name:
+    description: "The chart name"
+    required: true
+  version:
+    required: true
+    description: "The chart version"
+  release-name:
+    required: false
+    description: "release name for helm installation. default is chart name"
+  wait-for-healthcheck:
+    default: true
+    description: "wait for healthcheck"
+    required: false
+  use-webcaller:
+    default: true
+    required: false
+    description: "Initialize using webcaller after healthcheck"
+  pod-dns:
+    required: false
+    description: "dns name to construct webcaller call. defaults to release name"
+  webcaller-account:
+    required: false
+    description: "Account name for to use for webcaller, default is nama.<chart-name>"
+  deploy-regions:
+    required: false
+    default: "na,fr,sg"
+    description: "deploy to locations"
+
+runs:
+  using: composite
+  steps:
+    - run: |
+        owner=$(cut -d '/' -f 1 <<< "$GITHUB_REPOSITORY")
+        repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
+        args=(--chart "${{ inputs.chart-name }}" --release "${{ inputs.release-name }}")
+        args+=(--version "${{ inputs.version }}" --deploy-regions "${{ inputs.deploy-regions }}")
+        if [[ "${{ inputs.wait-for-healthcheck }}" = "true" ]]; then
+            args+=(--wait-for-healthcheck)
+        fi
+        if [[ -n "${{ inputs.pod-dns }}" ]]; then
+            args+=(--pod-dns "${{ inputs.pod-dns }}")
+        fi
+        if [[ "${{ inputs.use-webcaller }}" = "true" ]]; then
+            args+=(--use-webcaller)
+        fi
+        if [[ -n "${{ inputs.deploy-regions }}" ]]; then
+            args+=(--deploy-regions "${{ inputs.deploy-regions }}")
+        fi
+        if [[ -n "${{ inputs.webcaller-account }}" ]]; then
+            args+=(--webcaller-account "${{ inputs.webcaller-account }}")
+        fi
+        "$GITHUB_ACTION_PATH/deploy.sh" "${args[@]}"
+      shell: bash
+      
