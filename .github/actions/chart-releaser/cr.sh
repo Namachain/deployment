@@ -274,7 +274,7 @@ update_index() {
     fi
 
     echo 'Updating charts repo index...'
-    cr index "${args[@]}" -i ./$helm_dir/index.yaml -p ./$helm_dir/chart-packages
+    helm repo index ./$helm_dir/ 
        
     p_pwd=$(pwd)
     

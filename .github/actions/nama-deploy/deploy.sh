@@ -172,7 +172,7 @@ cat <<EOF >> .deploy_script
     helm repo update    
     export installed=\$(helm list -f "^$release\$" -q)
     echo "Searching for release=\$installed"
-     if [[ -z "\$installed" ]]; then
+    if [[ -z "\$installed" ]]; then
          echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version $version"
          helm install $release namachain/$chart --version $version
     else
