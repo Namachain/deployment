@@ -21,13 +21,12 @@ jobs:
     runs-on: ubuntu-latest
     env:
       NUGET_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      DOCKER_TOKEN: ${{ secrets.DOCKERPASS }}
     steps:
     - name: checkout code
       uses: actions/checkout@v2
 
     - name: Login to docker
-      run: docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} -p $DOCKER_TOKEN
+      run: echo ${{ secrets.DOCKERPASS }} | docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} --password-stdin
 
     - name: Build
       run: docker build . --file dockerfiles/${{ github.event.inputs.dockerfile }} --tag registry.namachain.com/namachain/${{ github.event.inputs.image_name }}:${{ github.event.inputs.image_version }} --tag registry.namachain.com/namachain/${{ github.event.inputs.image_name }}:latest
