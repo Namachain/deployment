@@ -20,7 +20,7 @@ for env, locations in pipeline.items():
     print(env)
     for location, config in locations.items():
         enabled = config["enabled"]
-        ip_address = config["ip_address"]
+        ip_address = config.get("ip_address", config['address'])
         staging_env = config["staging_env"]
         print(location)
         print(enabled)

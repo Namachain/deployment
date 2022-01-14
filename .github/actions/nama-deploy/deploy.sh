@@ -29,7 +29,7 @@ Usage: $(basename "$0") <options>
     -r, --release                 Release name
     -u, --use-webcaller           Initialize using webcaller after healthcheck
     -p, --pod-dns                 dns name to construct webcaller call. defaults to release name
-    -a, --webcaller-account          account for webcaller request
+    -a, --webcaller-account       account for webcaller request
     -d, --deploy-regions          list of regions to deploy to, comma separated
 EOF
 }
@@ -188,7 +188,7 @@ cat <<EOF >> .deploy_script
         -- curl --location --request POST http://vault:80/api/service/deploy --header "Content-Type: application/json" --data-raw "{\"baseUrl\":\"http://$pod_dns:80\",\"account\":\"$wc_acct\"}"
     fi
     echo "[\$(date -Is)] Deployment completed."
-          
+
 EOF
     echo "Executing on server: $(cat .deploy_script)"
     cat .deploy_script | ssh -oStrictHostKeyChecking=no -i ./.key nama@$address bash 
