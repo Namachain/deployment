@@ -166,7 +166,7 @@ deploy_chart() {
     local address="$1"
     echo -e "${SSH_DEPLOY_KEY//\s+/\\n}" > .key
     chmod 600 .key 
-cat <<EOF >> .deploy_script
+cat <<EOF > .deploy_script
     set -e; set -x;
     echo "[\$(date -Is)] Deploying..."
     helm repo update    
