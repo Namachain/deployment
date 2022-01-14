@@ -181,7 +181,7 @@ cat <<EOF > .deploy_script
      fi
    
     if [[ -n "$wait_hc" ]]; then
-      kubectl wait --for=condition=Available --timeout=20s deployment.apps/$chart
+      kubectl wait --for=condition=Available --timeout=35s deployment.apps/$chart
     fi
     if [[ -n "$use_wc" ]]; then
       kubectl exec -i -t webcaller \
