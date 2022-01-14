@@ -181,7 +181,7 @@ cat <<EOF > .deploy_script
      fi
    
     if [[ -n "$wait_hc" ]]; then
-      wait 5s
+      sleep 5s
       kubectl wait --for=condition=Available --timeout=35s deployment.apps/$chart
     fi
     if [[ -n "$use_wc" ]]; then
