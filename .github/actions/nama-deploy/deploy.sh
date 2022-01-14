@@ -49,11 +49,11 @@ main() {
 
    for region in ${regions//,/ }
    do
-     sv_enabled=$(cat ./.github/pipeline.json | jq -r ".prod.$region.enabled")
+     sv_enabled=$(cat ./.github/env.json | jq -r ".prod.$region.enabled")
       if [ "$sv_enabled" = true ] ; then 
-        address=$(cat ./.github/pipeline.json | jq -r ".prod.$region.address")
+        address=$(cat ./.github/env.json | jq -r ".prod.$region.address")
         if [[ -z "$address" || "$address" == "null" ]]; then
-            address=$(cat ./.github/pipeline.json | jq -r ".prod.$region.ip_address")
+            address=$(cat ./.github/env.json | jq -r ".prod.$region.ip_address")
         fi
       fi;
      deploy_chart "$address"
