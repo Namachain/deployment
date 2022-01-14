@@ -36,7 +36,7 @@ matrix_include = []
 for env, locations in pipeline.items():
     print(env)
     for location, config in locations.items():
-        ip_address = config.get("ip_address",config['address'])
+        ip_address = config.get("ip_address",config.get('address'))
         staging_env = config["staging_env"]
         enabled = config["enabled"]
         if staging_env_from_input:
