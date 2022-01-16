@@ -31,6 +31,7 @@ Usage: $(basename "$0") <options>
     -p, --pod-dns                 dns name to construct webcaller call. defaults to release name
     -a, --webcaller-account       account for webcaller request
     -d, --deploy-regions          list of regions to deploy to, comma separated
+    -f, --force-redeploy          Force a redeployment even if there are no chart updates and image tag is the same
 EOF
 }
 
@@ -42,6 +43,7 @@ main() {
     local use_wc=
     local pod_dns=
     local wc_acct=
+    local force_redeploy=
     local regions="na,fr,sg"
 
     parse_command_line "$@"
@@ -50,12 +52,13 @@ main() {
    for region in ${regions//,/ }
    do
      sv_enabled=$(cat ./.github/env.json | jq -r ".prod.$region.enabled")
-      if [ "$sv_enabled" = true ] ; then 
+      if [ "$sv_enabled" = "true" ] ; then 
         address=$(cat ./.github/env.json | jq -r ".prod.$region.address")
         if [[ -z "$address" || "$address" == "null" ]]; then
             address=$(cat ./.github/env.json | jq -r ".prod.$region.ip_address")
         fi
       fi;
+    echo "deploying $region"
      deploy_chart "$address"
    done
    
@@ -135,6 +138,10 @@ parse_command_line() {
                 use_wc="true"
                 shift
                 ;;
+            -f|--force-redeploy)
+                force_redeploy="true"
+                shift
+                ;;
             *)
                 break
                 ;;
@@ -172,7 +179,10 @@ cat <<EOF > .deploy_script
     helm repo update    
     export installed=\$(helm list -f "^$release\$" -q)
     echo "Searching for release=\$installed"
-    if [[ -z "\$installed" ]]; then
+    if [[ -z "\$installed" || "$force_redeploy" = "true"  ]]; then
+        if [[ -n "\$installed" ]]; then
+            helm uninstall $release
+        fi
          echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version $version"
          helm install $release namachain/$chart --version $version
     else

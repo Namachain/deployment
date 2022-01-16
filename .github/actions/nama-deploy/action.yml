@@ -32,6 +32,10 @@ inputs:
     required: false
     default: "na,fr,sg"
     description: "deploy to locations"
+  force-redeploy:
+    description: 'Force a redeployment even if there are no chart updates and image tag is the same'
+    required: false
+    default: false
 
 runs:
   using: composite
@@ -55,6 +59,9 @@ runs:
         fi
         if [[ -n "${{ inputs.webcaller-account }}" ]]; then
             args+=(--webcaller-account "${{ inputs.webcaller-account }}")
+        fi
+        if [[ "${{ inputs.force-redeploy }}" = "true" ]]; then
+            args+=(--force-redeploy)
         fi
         "$GITHUB_ACTION_PATH/deploy.sh" "${args[@]}"
       shell: bash
