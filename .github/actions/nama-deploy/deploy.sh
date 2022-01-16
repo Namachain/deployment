@@ -136,11 +136,9 @@ parse_command_line() {
                 ;;
             -u|--use-webcaller)
                 use_wc="true"
-                shift
                 ;;
             -f|--force-redeploy)
                 force_redeploy="true"
-                shift
                 ;;
             *)
                 break
