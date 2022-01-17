@@ -204,22 +204,35 @@ services:
           - mail
     volumes:
       - sslv:/sslv
+  redis:
+    hostname: redis
+    container_name: redis
+    image: redis
+    networks:
+      redisnet:
+        aliases:
+          - redis
   kyc:
     hostname: kyc
     container_name: kyc
-    image: registry.namachain.com/namachain/kyc:${kycapp_IMAGE_TAG}
-    ports: 
+    image: namachain/kyc
+    build:
+      context: .
+      dockerfile: services/namachain.kyc/Dockerfile
+    ports:
       - "5004:80"
     depends_on:
       userchain:
         condition: service_healthy
       authenticator:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       localnet:
         aliases:
           - kyc
-      mailnet:
+      redisnet:
         aliases:
           - kyc
     environment:
@@ -332,6 +345,7 @@ services:
 networks:
   localnet: {}
   mailnet: {}
+  redisnet: {}
 volumes:
   sslv:
     external: true
