@@ -262,7 +262,7 @@ release_charts() {
     
     echo 'Releasing charts...'
     ls -al .cr-release-packages/
-    cr upload "${args[@]}"
+    #cr upload "${args[@]}"
     mkdir -p $helm_dir/chart-packages/
     cp .cr-release-packages/* $helm_dir/chart-packages/
 }
