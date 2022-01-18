@@ -235,6 +235,9 @@ services:
       redisnet:
         aliases:
           - kyc
+      mailnet:
+        aliases:
+          - kyc
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
       - APP_ShuftiPro__Secret=${APP_ShuftiPro__Secret}
