@@ -6,9 +6,13 @@ on:
       branch:
         required: true
         type: string
+    outputs:
+      image_tag:
+        description: "The docker image tag to be deployed"
+        value: "${{ jobs.gettag.outputs.image_tag }}"
 
 jobs:
-  publishbuild:
+  gettag:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.generate_output.outputs.image_tag }}
