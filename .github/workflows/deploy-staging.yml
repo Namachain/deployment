@@ -35,6 +35,8 @@ on:
         required: true
       APP_VAULT__KEY:
         required: false
+      APP_SHUFTIPRO__SECRET:
+        required: false
 
 jobs:
   generate-deployment-strategy:
@@ -102,6 +104,7 @@ jobs:
     - name: deploy app container
       run: |
         export APP_VAULT__KEY=${{ secrets.APP_VAULT__KEY }}
+        export APP_ShuftiPro__Secret=${{ secrets.APP_SHUFTIPRO__SECRET }}
         export namakey_IMAGE_TAG=latest
         export vault_IMAGE_TAG=latest
         export credsdeploy_IMAGE_TAG=latest
@@ -122,7 +125,7 @@ jobs:
         -f docker-compose.${{ matrix.staging_env }}.yml \
         -s ${{ matrix.app_name }}
 
-    - name: run credential continer
+    - name: run credential container
       # run credential container to update the credentials for the app just deployed, first, it makes sure
       # the new app container is up and running using the health_check_cmd, then it runs the provided
       # credential_service container to update the credentials

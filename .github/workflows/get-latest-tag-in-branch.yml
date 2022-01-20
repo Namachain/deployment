@@ -1,0 +1,23 @@
+name: Get latest tag in branch
+
+on:
+  workflow_call:
+    inputs:
+      branch:
+        required: true
+        type: string
+
+jobs:
+  publishbuild:
+    runs-on: ubuntu-latest
+    outputs:
+      image_tag: ${{ steps.generate_output.outputs.image_tag }}
+    steps:
+    - name: Generate-Output
+      id: generate_output
+      run: |
+        tag=`git describe --tags | sed -E 's/(([0-9]+\.){2}[0-9]+-build[0-9]+).*/\1/g'`
+        if [[ ! "$tag" == *build* ]]; then
+          tag=`echo $tag | sed -E 's/(([0-9]+\.){2}[0-9]+).*/\1/g'`
+        fi
+        echo "::set-output name=image_tag::$tag"
