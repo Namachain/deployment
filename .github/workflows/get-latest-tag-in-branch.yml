@@ -13,6 +13,10 @@ jobs:
     outputs:
       image_tag: ${{ steps.generate_output.outputs.image_tag }}
     steps:
+    - uses: actions/checkout@v2
+      with:
+        ref: ${{ inputs.branch }}
+        fetch-depth: 0
     - name: Generate-Output
       id: generate_output
       run: |
