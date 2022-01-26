@@ -216,9 +216,6 @@ services:
     hostname: kyc
     container_name: kyc
     image: registry.namachain.com/namachain/kyc:${kyc_IMAGE_TAG}
-    build:
-      context: .
-      dockerfile: services/namachain.kyc/Dockerfile
     ports:
       - "5004:80"
     depends_on:
