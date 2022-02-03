@@ -47,7 +47,7 @@ runs:
     - run: |
         owner=$(cut -d '/' -f 1 <<< "$GITHUB_REPOSITORY")
         repo=$(cut -d '/' -f 2 <<< "$GITHUB_REPOSITORY")
-        args=(--chart "${{ inputs.chart-name }}" --release "${{ inputs.release-name }}") --env "${{ inputs.environment }}")
+        args=(--chart "${{ inputs.chart-name }}" --release "${{ inputs.release-name }}" --env "${{ inputs.environment }}")
         args+=(--version "${{ inputs.version }}" --deploy-regions "${{ inputs.deploy-regions }}")
         if [[ "${{ inputs.wait-for-healthcheck }}" = "true" ]]; then
             args+=(--wait-for-healthcheck)
