@@ -35,6 +35,8 @@ on:
         required: true
       APP_VAULT__KEY:
         required: false
+      APP_SHUFTIPRO__SECRET:
+        required: false
 
 jobs:
   generate-deployment-strategy:
@@ -77,52 +79,51 @@ jobs:
     - name: accept remote host key
       run: ssh-keyscan -H ${{ matrix.ip_address }} >> ~/.ssh/known_hosts
 
-    - name: create docker context
-      run: docker context create namachain-context --default-stack-orchestrator=swarm --docker host=ssh://${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }}
+    # - name: create docker context
+    #   run: docker context create namachain-context --default-stack-orchestrator=swarm --docker host=ssh://${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }}
 
-    - name: use docker context
-      run:  docker context use namachain-context
+    # - name: use docker context
+    #   run:  docker context use namachain-context
 
-    - name: show docker version
-      run: docker version
+    # - name: show docker version
+    #   run: docker version
 
     - name: list docker process
-      run: docker ps
+      run: ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'docker ps'
 
     - name: download deployment files
       run: |
-        curl --header "authorization: Bearer ${{ secrets.PAT_FOR_DEPLOYMENT }}" https://raw.githubusercontent.com/Namachain/deployment/master/deploy.sh -o deploy.sh
-        curl --header "authorization: Bearer ${{ secrets.PAT_FOR_DEPLOYMENT }}" https://raw.githubusercontent.com/Namachain/deployment/master/docker-compose.India.yml -o docker-compose.India.yml
-        curl --header "authorization: Bearer ${{ secrets.PAT_FOR_DEPLOYMENT }}" https://raw.githubusercontent.com/Namachain/deployment/master/docker-compose.Staging.yml -o docker-compose.Staging.yml
-        chmod +x deploy.sh
+        ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'curl --header "authorization: Bearer ${{ secrets.PAT_FOR_DEPLOYMENT }}" https://raw.githubusercontent.com/Namachain/deployment/master/deploy.sh -o deploy.sh'
+        ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'curl --header "authorization: Bearer ${{ secrets.PAT_FOR_DEPLOYMENT }}" https://raw.githubusercontent.com/Namachain/deployment/master/docker-compose.India.yml -o docker-compose.India.yml'
+        ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'curl --header "authorization: Bearer ${{ secrets.PAT_FOR_DEPLOYMENT }}" https://raw.githubusercontent.com/Namachain/deployment/master/docker-compose.Staging.yml -o docker-compose.Staging.yml'
+        ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'chmod +x deploy.sh'
 
     - name: login to docker registry
-      run: echo ${{ secrets.DOCKERPASS }} | docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} --password-stdin
+      run: ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'echo ${{ secrets.DOCKERPASS }} | docker login registry.namachain.com -u ${{ secrets.DOCKERUSER }} --password-stdin'
 
     - name: deploy app container
       run: |
-        export APP_VAULT__KEY=${{ secrets.APP_VAULT__KEY }}
-        export namakey_IMAGE_TAG=latest
-        export vault_IMAGE_TAG=latest
-        export credsdeploy_IMAGE_TAG=latest
-        export userchain_IMAGE_TAG=latest
-        export userchaininit_IMAGE_TAG=latest
-        export authenticator_IMAGE_TAG=latest
-        export app_IMAGE_TAG=latest
-        export business_IMAGE_TAG=latest
-        export portal_IMAGE_TAG=latest
-        export kycapp_IMAGE_TAG=latest
-        export demoservice_IMAGE_TAG=latest
-        export producer_IMAGE_TAG=latest
-        export producerconfig_IMAGE_TAG=latest
-        export aml_IMAGE_TAG=latest
-        export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}
+        ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} \
+        'export APP_VAULT__KEY=${{ secrets.APP_VAULT__KEY }}; \
+        export APP_ShuftiPro__Secret=${{ secrets.APP_SHUFTIPRO__SECRET }}; \
+        export namakey_IMAGE_TAG=latest; \
+        export vault_IMAGE_TAG=latest; \
+        export credsdeploy_IMAGE_TAG=latest; \
+        export userchain_IMAGE_TAG=latest; \
+        export userchaininit_IMAGE_TAG=latest; \
+        export authenticator_IMAGE_TAG=latest; \
+        export app_IMAGE_TAG=latest; \
+        export business_IMAGE_TAG=latest; \
+        export portal_IMAGE_TAG=latest; \
+        export kyc_IMAGE_TAG=latest; \
+        export demoservice_IMAGE_TAG=latest; \
+        export producer_IMAGE_TAG=latest; \
+        export producerconfig_IMAGE_TAG=latest; \
+        export aml_IMAGE_TAG=latest; \
+        export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}; \
+        ./deploy.sh -n -p staging  -f docker-compose.Staging.yml -s ${{ matrix.app_name }}'
 
-        ./deploy.sh -n -p staging -c namachain-context \
-        -f docker-compose.${{ matrix.staging_env }}.yml \
-        -s ${{ matrix.app_name }}
-
-    - name: run credential continer
+    - name: run credential container
       # run credential container to update the credentials for the app just deployed, first, it makes sure
       # the new app container is up and running using the health_check_cmd, then it runs the provided
       # credential_service container to update the credentials
@@ -130,30 +131,28 @@ jobs:
       run: |
         until ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'curl ${{ matrix.health_check_cmd }}'; do sleep 10; done
 
-        export namakey_IMAGE_TAG=latest
-        export vault_IMAGE_TAG=latest
-        export credsdeploy_IMAGE_TAG=latest
-        export userchain_IMAGE_TAG=latest
-        export userchaininit_IMAGE_TAG=latest
-        export authenticator_IMAGE_TAG=latest
-        export app_IMAGE_TAG=latest
-        export business_IMAGE_TAG=latest
-        export portal_IMAGE_TAG=latest
-        export kycapp_IMAGE_TAG=latest
-        export demoservice_IMAGE_TAG=latest
-        export producer_IMAGE_TAG=latest
-        export producerconfig_IMAGE_TAG=latest
-        export aml_IMAGE_TAG=latest
-        export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}
-
-        ./deploy.sh -n -p staging -c namachain-context \
-        -f docker-compose.${{ matrix.staging_env }}.yml \
-        -s ${{ matrix.credential_service }}
-
-    - name: remote ssh private key
-      if: ${{ always() }}
-      run: rm -rf ~/.ssh
+        ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} \
+        'export namakey_IMAGE_TAG=latest; \
+        export vault_IMAGE_TAG=latest; \
+        export credsdeploy_IMAGE_TAG=latest; \
+        export userchain_IMAGE_TAG=latest; \
+        export userchaininit_IMAGE_TAG=latest; \
+        export authenticator_IMAGE_TAG=latest; \
+        export app_IMAGE_TAG=latest; \
+        export business_IMAGE_TAG=latest; \
+        export portal_IMAGE_TAG=latest; \
+        export kyc_IMAGE_TAG=latest; \
+        export demoservice_IMAGE_TAG=latest; \
+        export producer_IMAGE_TAG=latest; \
+        export producerconfig_IMAGE_TAG=latest; \
+        export aml_IMAGE_TAG=latest; \
+        export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}; \
+        ./deploy.sh -n -p staging -f docker-compose.Staging.yml -s ${{ matrix.credential_service }}'
 
     - name: Logout docker
       if: always()
-      run: docker logout registry.namachain.com
+      run: ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'docker logout registry.namachain.com'
+
+    - name: remove ssh private key
+      if: ${{ always() }}
+      run: rm -rf ~/.ssh
