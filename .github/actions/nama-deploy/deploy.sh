@@ -186,8 +186,8 @@ cat <<EOF > .deploy_script
     set -e; set -x;
     echo "[\$(date -Is)] Deploying..."
     helm repo update
-    ts=$(date +%s)
-    mkdir -p /var/namachain/deploy/$ts && cd /var/namachain/deploy/$ts && echo "Deploying from $ts"
+    ts=\$(date +%s)
+    mkdir -p /var/namachain/deploy/\$ts && cd /var/namachain/deploy/\$ts && echo "Deploying from \$ts"
     helm pull namachain/$chart --version $version --untar
     export installed=\$(helm list -f "^$release\$" -q)
     echo "Searching for release=\$installed"
