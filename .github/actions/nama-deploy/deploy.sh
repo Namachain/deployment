@@ -25,7 +25,8 @@ Usage: $(basename "$0") <options>
     -h, --help                    Display help
     -v, --version                 The chart version to use (default: latest)"
     -w, --wait-for-healthcheck    Wait for healthcheck after deploynment
-    -c, --chart                   Chart name 
+    -c, --chart                   Chart name
+    -e, --env                     Environment (Prod, Testnet) 
     -r, --release                 Release name
     -u, --use-webcaller           Initialize using webcaller after healthcheck
     -p, --pod-dns                 dns name to construct webcaller call. defaults to release name
@@ -44,22 +45,22 @@ main() {
     local pod_dns=
     local wc_acct=
     local force_redeploy=
-    local regions="na,fr,sg"
-
+    local regions="ny"
+    local env="Testnet"
     parse_command_line "$@"
 
 
    for region in ${regions//,/ }
    do
-     sv_enabled=$(cat ./.github/env.json | jq -r ".prod.$region.enabled")
+     sv_enabled=$(cat ./.github/env.json | jq -r ".$env.$region.enabled")
       if [ "$sv_enabled" = "true" ] ; then 
-        address=$(cat ./.github/env.json | jq -r ".prod.$region.address")
+        address=$(cat ./.github/env.json | jq -r ".$env.$region.address")
         if [[ -z "$address" || "$address" == "null" ]]; then
             address=$(cat ./.github/env.json | jq -r ".prod.$region.ip_address")
         fi
       fi;
-    echo "deploying $region"
-     deploy_chart "$address"
+    echo "Deploying to $env/$region"
+    deploy_chart "$address"
    done
    
 }
@@ -77,6 +78,16 @@ parse_command_line() {
                     shift
                 else
                     echo "ERROR: '--config' cannot be empty." >&2
+                    show_help
+                    exit 1
+                fi
+                ;;
+            -e|--env)
+                if [[ -n "${2:-}" ]]; then
+                    env="$2"
+                    shift
+                else
+                    echo "ERROR: '--env' cannot be empty." >&2
                     show_help
                     exit 1
                 fi
@@ -174,7 +185,10 @@ deploy_chart() {
 cat <<EOF > .deploy_script
     set -e; set -x;
     echo "[\$(date -Is)] Deploying..."
-    helm repo update    
+    helm repo update
+    ts=$(date +%s)
+    mkdir -p /var/namachain/deploy/$ts && cd /var/namachain/deploy/$ts && echo "Deploying from $ts"
+    helm pull namachain/$chart --version $version --untar
     export installed=\$(helm list -f "^$release\$" -q)
     echo "Searching for release=\$installed"
     if [[ -z "\$installed" || "$force_redeploy" = "true"  ]]; then
@@ -182,15 +196,15 @@ cat <<EOF > .deploy_script
             helm uninstall $release
         fi
          echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version $version"
-         helm install $release namachain/$chart --version $version
+         helm install $release ./$chart -f ./$chart/values-${env}.yaml --version $version
     else
          echo "[\$(date -Is)] attempting to upgrade $release to version $version..."
-         helm upgrade $release namachain/$chart --version $version
+         helm upgrade $release ./$chart -f ./$chart/values-${env}.yaml --version $version
      fi
    
     if [[ -n "$wait_hc" ]]; then
       sleep 5s
-      kubectl wait --for=condition=Available --timeout=35s deployment.apps/$chart
+      kubectl wait --for=condition=Available --timeout=90s deployment.apps/$chart
     fi
     if [[ -n "$use_wc" ]]; then
       kubectl exec -i -t webcaller \
@@ -203,5 +217,4 @@ EOF
     cat .deploy_script | ssh -oStrictHostKeyChecking=no -i ./.key nama@$address bash 
     rm -f .key .deploy-script 
 }
-
 main "$@"

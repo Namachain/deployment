@@ -117,7 +117,7 @@ jobs:
           token: "${{ secrets.CI_PAT }}"
          
       - name: Run chart-releaser
-        uses: Namachain/deployment/.github/actions/chart-releaser@feature/charts
+        uses: Namachain/deployment/.github/actions/chart-releaser@master
         with:
           charts_dir: ${{ inputs.charts_dir }}
         env:
