@@ -197,10 +197,10 @@ cat <<EOF > .deploy_script
         fi
          echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version $version"
          touch ./$chart/values-${env}.yaml
-         helm install $release ./$chart -f ./$chart/values-${env}.yaml --version $version
+         helm install $release ./$chart -f ./$chart/values-${env}.yaml --version $version --set environment=${env}
     else
          echo "[\$(date -Is)] attempting to upgrade $release to version $version..."
-         helm upgrade $release ./$chart -f ./$chart/values-${env}.yaml --version $version
+         helm upgrade $release ./$chart -f ./$chart/values-${env}.yaml --version $version --set environment=${env}
      fi
    
     if [[ -n "$wait_hc" ]]; then
