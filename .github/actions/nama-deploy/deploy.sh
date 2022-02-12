@@ -196,6 +196,7 @@ cat <<EOF > .deploy_script
             helm uninstall $release
         fi
          echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version $version"
+         touch ./$chart/values-${env}.yaml
          helm install $release ./$chart -f ./$chart/values-${env}.yaml --version $version
     else
          echo "[\$(date -Is)] attempting to upgrade $release to version $version..."
