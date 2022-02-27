@@ -3,16 +3,9 @@ name: Publish Build
 on:
   workflow_call:
     inputs:
-      app_name:
-        required: true
-        type: string
       branch:
         required: true
         type: string
-      csproj_dir:
-        required: false
-        type: string
-        default: '.'
     secrets:
       GH_TOKEN:
         required: true
@@ -22,9 +15,6 @@ on:
 jobs:
   publishbuild:
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.generate_output.outputs.version }}
-      build: ${{ steps.generate_output.outputs.build }}
     env:
       NUGET_AUTH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
@@ -35,7 +25,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 5.0.x
+        dotnet-version: |
+          5.0.x
+          6.0.x
         source-url: https://nuget.pkg.github.com/Namachain/index.json
       env:
         NUGET_AUTH_TOKEN: ${{ secrets.PAT }}

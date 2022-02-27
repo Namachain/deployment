@@ -130,7 +130,7 @@ jobs:
       if: matrix.health_check_cmd != '' && matrix.credential_service != ''
       run: |
         until ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} 'curl ${{ matrix.health_check_cmd }}'; do sleep 10; done
-
+        sleep 10
         ssh ${{ secrets.DOCKER_USERNAME }}@${{ matrix.ip_address }} \
         'export namakey_IMAGE_TAG=latest; \
         export vault_IMAGE_TAG=latest; \
