@@ -180,6 +180,7 @@ parse_command_line() {
 
 deploy_chart() {
     local address="$1"
+
     echo -e "${SSH_DEPLOY_KEY//\s+/\\n}" > .key
     chmod 600 .key 
 cat <<EOF > .deploy_script
@@ -188,9 +189,7 @@ cat <<EOF > .deploy_script
     helm repo update
     ts=\$(date +%s)
     mkdir -p /home/nama/deploy/\$ts && cd /home/nama/deploy/\$ts && echo "Deploying from \$ts"
-    helm pull namachain/$chart --version $version --untar
-    export installed=\$(helm list -f "^$release\$" -q)
-    echo "Searching for release=\$installed"
+
     ver="$version"
     if [[ -z "\$ver" ]]; then
         ver="latest-stable"
@@ -201,17 +200,21 @@ cat <<EOF > .deploy_script
     if [ "\$ver" = "latest-stable" ]; then
       ver=\$(helm search repo namachain | grep namachain/$chart | awk '{print \$2}')
     fi
+    
+    helm pull namachain/$chart --version \$ver --untar
+    export installed=\$(helm list -f "^$release\$" -q)
+    echo "Searching for release=\$installed"
     if [[ -z "\$installed" || "$force_redeploy" = "true"  ]]; then
         if [[ -n "\$installed" ]]; then
             helm uninstall $release
         fi
-         echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version $version"
+         echo "[\$(date -Is)] Installing namachain/$chart as release name $release at version \$ver"
          touch ./$chart/values-${env}.yaml
-         helm install $release ./$chart -f ./$chart/values-${env}.yaml --version $ver --set environment=${env}
+         helm install $release ./$chart -f ./$chart/values-${env}.yaml --version \$ver --set environment=${env}
     else
-         echo "[\$(date -Is)] attempting to upgrade $release to version $version..."
-         helm upgrade $release ./$chart -f ./$chart/values-${env}.yaml --version $ver --set environment=${env}
-     fi
+         echo "[\$(date -Is)] attempting to upgrade $release to version \$ver..."
+         helm upgrade $release ./$chart -f ./$chart/values-${env}.yaml --version \$ver --set environment=${env}
+    fi
    
     if [[ -n "$wait_hc" ]]; then
       sleep 5s
