@@ -220,7 +220,7 @@ cat <<EOF > .deploy_script
       sleep 5s
       kubectl wait --for=condition=Available --timeout=90s deployment.apps/$chart
     fi
-    if [[ -n "$use_wc" ]]; then
+    if [[ -n "$use_wc"  && ! ($chart == vault) ]]; then
       kubectl exec -i -t webcaller \
         -- curl --location --request POST http://vault:80/api/service/deploy --header "Content-Type: application/json" --data-raw "{\"baseUrl\":\"http://$pod_dns:80\",\"account\":\"$wc_acct\"}"
     fi
