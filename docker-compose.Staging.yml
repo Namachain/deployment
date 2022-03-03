@@ -146,7 +146,7 @@ services:
     networks:
       localnet:
         aliases:
-          - app
+          - business
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
   businesscredentials:
