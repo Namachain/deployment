@@ -286,11 +286,45 @@ services:
       service: credsdeploy
     container_name: amlcreds
     depends_on:
-      portal:
+      aml:
         condition: service_healthy
       vault:
         condition: service_started
     command: [ "{\"baseUrl\":\"http://aml:80\",\"account\":\"nama.aml\"}" ]
+  serviceapi:
+    hostname: serviceapi
+    container_name: serviceapi
+    image: registry.namachain.com/namachain/serviceapi:${serviceapi_IMAGE_TAG}
+    ports:
+      - "5020:80"
+    depends_on:
+      userchain:
+        condition: service_healthy
+      authenticator:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      yb-tserver:
+        condition: service_started
+    networks:
+      localnet:
+        aliases:
+          - serviceapi
+      mailnet:
+        aliases:
+          - serviceapi
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Staging
+  serviceapicredentials:
+    extends:
+      service: credsdeploy
+    container_name: serviceapicreds
+    depends_on:
+      serviceapi:
+        condition: service_healthy
+      vault:
+        condition: service_started
+    command: [ "{\"baseUrl\":\"http://serviceapi:80\",\"account\":\"nama.serv\"}" ]
   demoservice:
     hostname: demoservice
     container_name: demoservice
@@ -348,6 +382,44 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
+  yb-master:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-master-n1
+    volumes:
+      - yb-master-data-1:/mnt/master
+    command: [ "/home/yugabyte/bin/yb-master",
+               "--fs_data_dirs=/mnt/master",
+               "--master_addresses=yb-master-n1:7100",
+               "--rpc_bind_addresses=yb-master-n1:7100",
+               "--replication_factor=1"]
+    ports:
+      - "7000:7000"
+    environment:
+      SERVICE_7000_NAME: yb-master
+
+  yb-tserver:
+    image: yugabytedb/yugabyte:latest
+    container_name: yb-tserver-n1
+    volumes:
+      - yb-tserver-data-1:/mnt/tserver
+    command: [ "/home/yugabyte/bin/yb-tserver",
+               "--fs_data_dirs=/mnt/tserver",
+               "--start_pgsql_proxy",
+               "--ysql_enable_auth",
+               "--use_cassandra_authentication",
+               "--rpc_bind_addresses=yb-tserver-n1:9100",
+               "--tserver_master_addrs=yb-master-n1:7100"]
+    ports:
+      - "9042:9042"
+      - "5433:5433"
+      - "9000:9000"
+    environment:
+      SERVICE_5433_NAME: ysql
+      SERVICE_9042_NAME: ycql
+      SERVICE_6379_NAME: yedis
+      SERVICE_9000_NAME: yb-tserver
+    depends_on:
+      - yb-master
 networks:
   localnet: {}
   mailnet: {}
@@ -359,6 +431,8 @@ volumes:
     external: false
   producer1volume:
     external: false
+  yb-master-data-1:
+  yb-tserver-data-1:
 secrets:
   prod1:
     file: ~/producer2/producer.json

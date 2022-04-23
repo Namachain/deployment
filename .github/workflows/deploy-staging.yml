@@ -120,6 +120,7 @@ jobs:
         export producer_IMAGE_TAG=latest; \
         export producerconfig_IMAGE_TAG=latest; \
         export aml_IMAGE_TAG=latest; \
+        export serviceapi_IMAGE_TAG=latest; \
         export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}; \
         ./deploy.sh -n -p staging  -f docker-compose.Staging.yml -s ${{ matrix.app_name }}'
 
@@ -145,6 +146,7 @@ jobs:
         export producer_IMAGE_TAG=latest; \
         export producerconfig_IMAGE_TAG=latest; \
         export aml_IMAGE_TAG=latest; \
+        export serviceapi_IMAGE_TAG=latest; \
         export ${{ matrix.app_name }}_IMAGE_TAG=${{ matrix.image_tag }}; \
         ./deploy.sh -n -p staging -f docker-compose.Staging.yml -s ${{ matrix.credential_service }}'
 
