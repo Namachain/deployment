@@ -304,7 +304,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_started
-      yb-tserver:
+      ybserver:
         condition: service_started
     networks:
       localnet:
