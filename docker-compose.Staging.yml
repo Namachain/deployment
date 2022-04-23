@@ -310,7 +310,7 @@ services:
       localnet:
         aliases:
           - serviceapi
-      mailnet:
+      redisnet:
         aliases:
           - serviceapi
     environment:
