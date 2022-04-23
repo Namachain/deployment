@@ -382,7 +382,7 @@ services:
         condition: service_healthy
       app:
         condition: service_healthy
-  yb-master:
+  ybmaster:
     image: yugabytedb/yugabyte:latest
     container_name: yb-master-n1
     volumes:
@@ -401,7 +401,7 @@ services:
         aliases:
           - ybmaster
 
-  yb-tserver:
+  ybserver:
     image: yugabytedb/yugabyte:latest
     container_name: yb-tserver-n1
     volumes:
@@ -423,7 +423,7 @@ services:
       SERVICE_6379_NAME: yedis
       SERVICE_9000_NAME: yb-tserver
     depends_on:
-      - yb-master
+      - ybmaster
     networks:
       localnet:
         aliases:
