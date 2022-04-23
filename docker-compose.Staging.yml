@@ -286,7 +286,7 @@ services:
       service: credsdeploy
     container_name: amlcreds
     depends_on:
-      portal:
+      aml:
         condition: service_healthy
       vault:
         condition: service_started
@@ -302,6 +302,10 @@ services:
         condition: service_healthy
       authenticator:
         condition: service_healthy
+      redis:
+        condition: service_started
+      yb-tserver:
+        condition: service_started
     networks:
       localnet:
         aliases:
@@ -316,7 +320,7 @@ services:
       service: credsdeploy
     container_name: serviceapicreds
     depends_on:
-      portal:
+      serviceapi:
         condition: service_healthy
       vault:
         condition: service_started
