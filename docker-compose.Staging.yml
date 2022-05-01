@@ -315,6 +315,12 @@ services:
           - serviceapi
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
+    healthcheck:
+      test: [ "CMD", "curl", "-X", "GET", "http://localhost:80/api/v1/publickey" ]
+      interval: 10s
+      timeout: 10s
+      retries: 2
+      start_period: 15s
   serviceapicredentials:
     extends:
       service: credsdeploy
