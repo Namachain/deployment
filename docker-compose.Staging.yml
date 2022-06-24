@@ -69,6 +69,12 @@ services:
       localnet:
         aliases:
           - auth
+      redisnet:
+        aliases:
+          - auth
+      mailnet:
+        aliases:
+          - auth
     environment:
       - ASPNETCORE_ENVIRONMENT=Staging
     healthcheck:
